@@ -1,0 +1,1 @@
+# App---Analisador-de-Espectros-de-Tinta
