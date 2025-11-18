@@ -1,6 +1,4 @@
-# **Aplicação para cálculo de concentrações em amostras**
-
-Este projeto visa criar uma interface para inserção de dados coletados de amostras, analisadas por meio da técnica de Fluorescência de Raios - X (FRXDE). E, dessa forma, calcular suas respectivas concentrações.
+# App---Analisador-de-Espectros-de-Tinta
 
 ### **Janela De Interação**
 ![](imagens/CalculadoraConcentracoes.png)
