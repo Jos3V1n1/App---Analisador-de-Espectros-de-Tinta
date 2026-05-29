@@ -2,7 +2,7 @@
 import os
 from tkinter import filedialog
 from models.graficosModel import parse_mca
-from models.databaseModel import Tinta, inicializar_banco, salvar_tinta_no_banco, buscar_todas_tintas_do_banco
+from models.databaseModel import Tinta, inicializar_banco, salvar_tinta_no_banco, buscar_todas_tintas_do_banco, deletar_tinta_do_banco
 
 class DatabaseVM:
     def __init__(self):
@@ -68,3 +68,17 @@ class DatabaseVM:
     def buscar_todas_tintas(self):
         """Busca todas as assinaturas guardadas no banco de dados."""
         return buscar_todas_tintas_do_banco()
+    
+    def excluir_tinta(self, nome_tinta: str) -> bool:
+        """
+        Recebe o nome da tinta da View, chama o Model para remover do SQLite
+        e retorna True se o processo foi concluído com sucesso.
+        """
+        try:
+            # Chama a função que deve existir no seu models/databaseModel.py
+            # Esta função deve executar: DELETE FROM tintas WHERE nome = ?
+            sucesso = deletar_tinta_do_banco(nome_tinta)
+            return sucesso
+        except Exception as e:
+            print(f"Erro na ViewModel ao tentar deletar: {e}")
+            return False
