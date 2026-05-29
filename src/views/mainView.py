@@ -9,7 +9,6 @@ from views.comparacaoView import ComparacaoView
 from models.graficosModel import gerar_figura_espectro
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
-import os
 
 class MainView(ctk.CTk):
     def __init__(self):

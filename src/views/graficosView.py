@@ -1,7 +1,6 @@
 # views/graficosView.py
 import customtkinter as ctk
 import os
-import numpy as np
 
 class GraficosView(ctk.CTkFrame):
     def __init__(self, master, viewmodel, sidebar):

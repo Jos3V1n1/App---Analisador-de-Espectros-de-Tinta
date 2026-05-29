@@ -1,6 +1,5 @@
 # views/databaseView.py
 import customtkinter as ctk
-import os
 from tkinter import messagebox, ttk
 
 class DatabaseView(ctk.CTkFrame):
