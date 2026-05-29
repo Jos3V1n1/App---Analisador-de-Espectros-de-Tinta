@@ -1,0 +1,11 @@
+# Interface Gráfica Moderna
+customtkinter>=5.2.2
+
+# Manipulação de Matrizes e Cálculos Estatísticos
+numpy>=1.26.0
+
+# Renderização de Gráficos e Integração com Tkinter
+matplotlib>=3.8.0
+
+# Nota: sqlite3 já faz parte da biblioteca padrão do Python, 
+# portanto não precisa ser listado aqui.
