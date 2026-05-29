@@ -87,3 +87,17 @@ def buscar_todas_tintas_do_banco():
         print(f"Erro ao ler banco de dados em databaseModel: {e}")
         
     return tintas
+
+# Dentro do seu models/databaseModel.py
+
+def deletar_tinta_do_banco(nome_tinta):
+    try:
+        conn = sqlite3.connect(DB_NAME) # Ajuste para o nome do seu arquivo
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM tintas WHERE nome = ?", (nome_tinta,))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Erro ao deletar no banco: {e}")
+        return False
