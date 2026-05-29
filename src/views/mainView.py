@@ -1,125 +1,98 @@
+# views/mainView.py
 import customtkinter as ctk
-from viewmodels.calculoVM import CalculoVM
-import tkinter as tk
-
-ctk.set_appearance_mode("dark")
-ctk.set_default_color_theme("dark-blue")
+from views.databaseView import DatabaseView
+from viewmodels.databaseVM import DatabaseVM
+from viewmodels.graficosVM import GraficosVM           # Adicionado a importação da GraficosVM
+from views.graficosView import GraficosView             # Adicionado a importação da GraficosView
+from models.graficosModel import gerar_figura_espectro  # Importa a construção limpa do gráfico
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.pyplot as plt
 
 class MainView(ctk.CTk):
     def __init__(self):
         super().__init__()
-
-        self.title("🧪 Calculadora de Concentrações")
+        self.title("Analisador de Espectros")
         self.geometry("1400x800")
-        self.resizable(True, True)
 
-        # --- SIDEBAR ---
+        # Mantém intactas as VMs originais e adiciona a de gráficos recebida
+        self.database_vm = DatabaseVM()
+        self.graficos_vm = GraficosVM()
+
+        self.configurar_layout_base()
+        self.mostrar_tela_inicial()
+
+    def configurar_layout_base(self):
+        # --- SIDEBAR FIXA ---
         self.sidebar = ctk.CTkFrame(self, width=220)
         self.sidebar.pack(side="left", fill="y")
+        
+        self.lbl_menu = ctk.CTkLabel(self.sidebar, text="☰ Menu", font=("Arial Black", 18, "bold"))
+        self.lbl_menu.pack(pady=20)
 
-        # --- MAIN AREA ---
+        # Mantém o container limpo para receber os botões originais da DatabaseView
+        self.container_botoes_dinamicos = ctk.CTkFrame(self.sidebar, fg_color="transparent")
+        self.container_botoes_dinamicos.pack(fill="both", expand=True, pady=10)
+
+        # --- ÁREA CENTRAL PRINCIPAL ---
         self.main_frame = ctk.CTkFrame(self, corner_radius=10)
         self.main_frame.pack(side="right", fill="both", expand=True, padx=20, pady=20)
 
-        # --- Frame dinâmico (conteúdo que muda) ---
-        self.dynamic_frame = ctk.CTkFrame(self.main_frame)
-        self.dynamic_frame.pack(fill="both", expand=True, pady=10, padx=40)
+        # Container Dinâmico Central (Onde a GraficosView injetará a label sem deletar o resto)
+        self.dynamic_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
+        self.dynamic_frame.pack(fill="x", padx=40, pady=10)
 
-        titulo = ctk.CTkLabel(self.sidebar, text="☰ Menu", font=("Arial Black", 18, "bold"))
-        titulo.pack(pady=20)
-
-        # Botão Sair
-        self.botao_sair = ctk.CTkButton(
-            self.sidebar,
-            text="Sair",
-            fg_color="red",
-            text_color="#FFFFFF",
-            font=("Arial Black", 12),
-            command=self.quit
-        )
-        self.botao_sair.pack(side="bottom", pady=20, fill="x", padx=20)
-
-        # Monta tela principal
-        self.mostrar_tela_inicial()
+        # Container Inferior Fixado (Para os gráficos)
+        self.result_frame = ctk.CTkFrame(self.main_frame, fg_color="#1e1e1e", corner_radius=8)
+        self.result_frame.pack(fill="both", expand=True, padx=40, pady=(0, 20))
 
     def mostrar_tela_inicial(self):
-        # Limpa conteúdo anterior
+        """Instancia e unifica as views para que os elementos originais permaneçam visíveis."""
         for widget in self.dynamic_frame.winfo_children():
             widget.destroy()
 
-        # Título
-        title = ctk.CTkLabel(self.dynamic_frame, text="Calcular Concentrações.", font=("Arial Black", 24, "bold"))
-        title.grid(row=0, column=0, columnspan=2, pady=(10, 30))
+        # 1. Carrega os inputs e botões padrão da sua DatabaseView original
+        self.subtela_banco = DatabaseView(self.dynamic_frame, self.database_vm, self.container_botoes_dinamicos)
+        self.subtela_banco.pack(fill="both", expand=True)
 
-        self.label_instrucoes = ctk.CTkLabel(self.dynamic_frame, text="No Menu à esquerda escolha um Padrão, selecione os Arquivos necessários e Calcule. \n"
-                                                                      "Ao fim, exporte-os para o Excel e crie os Gráficos se quiser.",
-                                                                      font=("Arial", 15), justify="center")
-        self.label_instrucoes.grid(row=1, column=0, columnspan=2, pady=(10, 30))
+        # 2. Injeta estritamente a label de Gráficos no mesmo frame central, sem apagar o banco
+        self.subtela_graficos = GraficosView(self.dynamic_frame, self.graficos_vm, self.container_botoes_dinamicos)
+        self.subtela_graficos.pack(fill="both", expand=True, pady=(10, 0))
 
-        # Configuração de colunas
-        self.dynamic_frame.grid_columnconfigure(0, weight=0)  # coluna dos textos
-        self.dynamic_frame.grid_columnconfigure(1, weight=1)  # coluna das áreas
-        self.dynamic_frame.grid_rowconfigure(1, weight=0)
-        self.dynamic_frame.grid_rowconfigure(2, weight=0)
-        self.dynamic_frame.grid_rowconfigure(3, weight=0)
-        #self.dynamic_frame.grid_rowconfigure(4, weight=1)
-        self.dynamic_frame.grid_rowconfigure(4, weight=2)
+        # Atualiza a barra lateral organizando o layout dos botões originais do seu sistema
+        self.atualizar_sidebar_com_botoes_da_vm()
 
-        # --- Linha 1: Arquivo Padrão ---
-        self.label_padrao = ctk.CTkLabel(self.dynamic_frame, text="> Arquivo Padrão:", font=("Arial Black", 16))
-        self.label_padrao.grid(row=2, column=0, sticky="", padx=(10, 10), pady=10)
+    def atualizar_sidebar_com_botoes_da_vm(self):
+        """Preenche a barra lateral com os botões vindos do banco e dos gráficos."""
+        # Limpa o que estava na barra antes
+        for widget in self.container_botoes_dinamicos.winfo_children():
+            widget.pack_forget() 
 
-        self.arquivo_frame = ctk.CTkFrame(self.dynamic_frame, width=40, height=40, fg_color="#2b2b2b")
-        self.arquivo_frame.grid(row=2, column=1, sticky="w", padx=(10, 10), pady=10)
-        self.arquivo_frame.grid_propagate(False)
+        # 1. Pega e renderiza os botões originais da DatabaseVM
+        botoes_banco = self.database_vm.obter_botoes_registrados()
+        for botao in botoes_banco:
+            botao.pack(pady=10, fill="x", padx=20)
 
-        # --- Linha 2: Arquivos Amostras ---
-        self.label_amostras = ctk.CTkLabel(self.dynamic_frame, text="> Arquivos Amostras:", font=("Arial Black", 16))
-        self.label_amostras.grid(row=3, column=0, sticky="", padx=(10, 10), pady=10)
+        # 2. Pega e renderiza o botão de Comparar da GraficosVM
+        botoes_grafico = self.graficos_vm.obter_botoes_registrados()
+        for botao in botoes_grafico:
+            botao.pack(pady=10, fill="x", padx=20)
 
-        # Frame externo
-        self.amostras_container = ctk.CTkFrame(self.dynamic_frame, fg_color="#2b2b2b")
-        self.amostras_container.grid(row=3, column=1, sticky="we", padx=(10, 40), pady=10)
-        self.amostras_container.grid_propagate(False)
+    def plotar_no_app(self, parsed_data, titulo_grafico):
+            """Renderiza no Canvas a figura gerada e estruturada estritamente dentro do Model."""
+            for widget in self.result_frame.winfo_children():
+                widget.destroy()
 
-        # Canvas dentro do frame
-        self.amostras_canvas = tk.Canvas(self.amostras_container, height=67, bg="#2b2b2b", highlightthickness=0)
-        self.amostras_canvas.pack(fill="both", expand=True)
-
-        # Scroll horizontal
-        self.scroll_x = ctk.CTkScrollbar(self.amostras_container, orientation="horizontal", command=self.amostras_canvas.xview)
-        self.scroll_x.pack(side="bottom", fill="x")
-
-        self.amostras_canvas.configure(xscrollcommand=self.scroll_x.set)
-
-        # Frame real onde os nomes serão colocados
-        self.amostras_frame = ctk.CTkFrame(self.amostras_canvas, fg_color="#2b2b2b")
-        self.amostras_window = self.amostras_canvas.create_window((0, 0), window=self.amostras_frame, anchor="nw")
-
-        # Atualiza área rolável
-        def update_scroll(event=None):
-            self.amostras_canvas.configure(scrollregion=self.amostras_canvas.bbox("all"))
-
-        self.amostras_frame.bind("<Configure>", update_scroll)
-
-        # --- Linha 3: Resultados ---
-        result_label = ctk.CTkLabel(self.dynamic_frame, text="- Resultados:", font=("Arial Black", 20))
-        result_label.grid(row=4, column=0, sticky="", pady=(40, 10))
-
-        self.result_frame = ctk.CTkFrame(self.dynamic_frame, height=500)
-        self.result_frame.grid(row=5, column=0, columnspan=2, sticky="nsew", padx=40, pady=(0, 20))
-        self.result_frame.grid_propagate(False)
+            # O modelo constrói o gráfico de forma isolada
+            fig = gerar_figura_espectro(parsed_data, titulo_grafico)
             
-        if not hasattr(self, "calculo_vm"):
-            # --- Instância da ViewModel ---
-            self.calculo_vm = CalculoVM(
-                self.sidebar,
-                self.result_frame,
-                self.arquivo_frame,
-                self.amostras_frame,
-                self.dynamic_frame,
-                self.mostrar_tela_inicial
-            )
-            if not hasattr(self, "botoes_criados"):
-                self.calculo_vm.botoes()
-                self.botoes_criados = True  # marca que já criou os botoes
+            canvas = FigureCanvasTkAgg(fig, master=self.result_frame)
+            canvas.draw()
+            canvas.get_tk_widget().pack(fill="both", expand=True, padx=10, pady=10)
+
+            # 🔍 ADICIONA A BARRA DE ZOOM E NAVEGAÇÃO DO MATPLOTLIB
+            from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
+            toolbar = NavigationToolbar2Tk(canvas, self.result_frame)
+            toolbar.update()
+            toolbar.pack(fill="x", padx=10, pady=(0, 5))
+
+            plt.close(fig)
