@@ -95,19 +95,25 @@ def calcular_eixo_energia(num_canais, pontos_calibracao):
 def gerar_figura_espectro(parsed_data, titulo_grafico):
     """Gera e estiliza o gráfico do Matplotlib retornando o objeto Figure."""
     ch = parsed_data.get("channels")
-    calib = parsed_data.get("calibration", [])
-    eixo_x = calcular_eixo_energia(ch.size, calib)
-    label_x = "Energia (keV)" if len(calib) >= 2 else "Canal (Sem Calibração)"
+    
+    # 🌟 NOVO: Verifica se o eixo X já veio calculado e calibrado (visto na ComparacaoView/MainView)
+    if "canais" in parsed_data and parsed_data.get("calibrado") == True:
+        eixo_x = parsed_data.get("canais")
+        label_x = "Energia (keV)"
+    else:
+        # Fallback para arquivos novos abertos diretamente do arquivo local
+        calib = parsed_data.get("calibration", [])
+        eixo_x = calcular_eixo_energia(ch.size, calib)
+        label_x = "Energia (keV)" if len(calib) >= 2 else "Canal (Sem Calibração)"
 
     plt.style.use('dark_background')
     fig, ax = plt.subplots(figsize=(10, 4), facecolor='#1e1e1e')
     ax.set_facecolor('#1e1e1e')
     
-    # 1. Desenha a linha do gráfico (aqui está com a cor azul '#1f77b4')
+    # 1. Desenha a linha do gráfico
     ax.plot(eixo_x, ch, color='white', linewidth=1.5)
     
-    # 2. ADICIONE ESTA LINHA PARA PINTAR A ÁREA DE VERMELHO:
-    # O parâmetro 'alpha' controla a transparência (0.3 significa 30% de opacidade)
+    # 2. Desenha a área preenchida abaixo do espectro
     ax.fill_between(eixo_x, ch, color='red', alpha=0.3)
     
     ax.set_title(titulo_grafico, fontdict={'fontsize': 12, 'fontweight': 'bold'})

@@ -31,7 +31,7 @@ class GraficosVM:
 
     def obter_dados_espectro(self):
         """Retorna os metadados e contagens estruturados para a View renderizar."""
-        if not self.dados_espectro_atual:
+        if self.dados_espectro_atual is None:
             return None
         return self.dados_espectro_atual
 
@@ -39,7 +39,7 @@ class GraficosVM:
         """
         Pega o espectro atual e solicita o ranking aplicando os filtros de tolerância.
         """
-        if not self.dados_espectro_atual:
+        if self.dados_espectro_atual is None:
             return []
             
         from models.graficosModel import buscar_e_rankear_espectros

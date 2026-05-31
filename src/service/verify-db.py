@@ -14,7 +14,12 @@ def consultar_tintas_cadastradas():
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
         
-        cursor.execute("SELECT id, nome, live_time, data_aquisicao, espectro_normalizado FROM tintas")
+        # 🌟 MODIFICADO: Agora trazemos as novas colunas na consulta SQL
+        cursor.execute("""
+            SELECT id, nome, live_time, data_aquisicao, espectro_normalizado, 
+                   arquivo_origem, canal_corte, threshold_utilizado 
+            FROM tintas
+        """)
         linhas = cursor.fetchall()
         
         if not linhas:
@@ -30,13 +35,23 @@ def consultar_tintas_cadastradas():
             live_time = linha[2]
             data_aquisicao = linha[3]
             espectro_str = linha[4]
+            # 🌟 NOVAS VARIÁVEIS CAPTURADAS:
+            arquivo_origem = linha[5]
+            canal_corte = linha[6]
+            threshold_utilizado = linha[7]
             
             # Reconverte a string de texto de volta para um array do numpy
             espectro_array = np.fromstring(espectro_str, sep=",")
             
+            # Formata o threshold para exibição visual em porcentagem (ex: 0.02 -> 2.0%)
+            thresh_fmt = f"{threshold_utilizado * 100:.1f}%" if isinstance(threshold_utilizado, float) else f"{threshold_utilizado}"
+
             # Trocado os caracteres especiais por marcadores simples (->) para evitar erros no Windows
             print(f"\n[ID {tinta_id}] Tinta: {nome}")
-            print(f"  -> Data de Aquisicao: {data_aquisicao}")
+            print(f"  -> Arquivo de Origem: {arquivo_origem}")
+            print(f"  -> Filtro de Corte (Canais Iniciais): {canal_corte} Ch")
+            print(f"  -> Filtro de Threshold Aplicado: {thresh_fmt}")
+            print(f"  -> Data de Aquisicao (MCA): {data_aquisicao}")
             print(f"  -> Tempo Ativo (Live Time): {live_time}s")
             print(f"  -> Tamanho do Vetor (Canais): {espectro_array.size}")
             print(f"  -> Soma das Contagens Norm.: {espectro_array.sum():.4f}")
@@ -45,8 +60,9 @@ def consultar_tintas_cadastradas():
             
         conn.close()
         
-    except sqlite3.OperationalError:
-        print(f"\n Erro: O arquivo '{DB_NAME}' nao foi encontrado ou a tabela nao existe.")
+    except sqlite3.OperationalError as e:
+        print(f"\n Erro: O arquivo '{DB_NAME}' nao foi encontrado, a tabela nao existe ou colunas estao ausentes.")
+        print(f" Detalhes do erro operacional: {e}")
     except Exception as e:
         print(f"\n Ocorreu um erro inesperado: {e}")
 

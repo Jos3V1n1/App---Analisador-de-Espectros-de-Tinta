@@ -14,7 +14,6 @@ class GraficosView(ctk.CTkFrame):
         
         self.configurar_layout_mestre()
         self.criar_painel_direita_filtros() # ➔ REATIVADO!
-        self.criar_e_enviar_botoes_esquerda()
 
     def configurar_layout_mestre(self):
         """Divide o espaço central superior para acomodar o gráfico e o painel de filtros."""
@@ -75,26 +74,6 @@ class GraficosView(ctk.CTkFrame):
         
         self.lbl_val_threshold = ctk.CTkLabel(frame_slide2, text=f"{self.threshold_percentual*100:.1f}", font=("Arial", 11, "bold"), width=25)
         self.lbl_val_threshold.pack(side="right")
-
-    def criar_e_enviar_botoes_esquerda(self):
-        """Instancia e renderiza os botões diretamente no container da barra lateral."""
-        for widget in self.sidebar.winfo_children():
-            widget.destroy()
-
-        btn_inspecionar = ctk.CTkButton(
-            self.sidebar, 
-            text="🔍 Inspecionar Filtro", 
-            font=("Arial", 12, "bold"), 
-            fg_color="#2da44e", 
-            hover_color="#22863a", 
-            command=self.atualizar_plotagem_inspecao
-        )
-        btn_abrir = ctk.CTkButton(self.sidebar, text="📁 Abrir Espectro", font=("Arial", 12, "bold"), command=self.ao_clicar_abrir)
-        
-        btn_inspecionar.pack(pady=10, fill="x", padx=20)
-        btn_abrir.pack(pady=10, fill="x", padx=20)
-        
-        self.vm.registrar_botoes([btn_inspecionar, btn_abrir])
 
     def ao_clicar_abrir(self):
         nome_arquivo = self.vm.selecionar_mca()
