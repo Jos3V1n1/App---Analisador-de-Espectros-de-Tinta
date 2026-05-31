@@ -25,7 +25,7 @@ class DatabaseVM:
         """Abre o seletor de ficheiros e armazena o caminho selecionado."""
         caminho = filedialog.askopenfilename(
             title="Selecione o arquivo de Espectro",
-            filetypes=[("Arquivos de Espectro", "*.mca *.spe"), ("Todos os arquivos", "*.*")]
+            filetypes=[("Arquivos de Espectro", "*.mca")]
         )
         if caminho:
             self.caminho_mca = caminho
@@ -39,10 +39,12 @@ class DatabaseVM:
             return None
         return self.dados_espectro_atual
 
-    def executar_salvamento(self, nome_tinta: str):
+# 🌟 ALTERE PARA (com "c"):
+    def executar_salvamento(self, nome_tinta: str, canal_corte: int = 20, threshold_pct: float = 0.02):
         """Valida as entradas, monta o Model 'Tinta' e solicita a gravação."""
         if self.dados_espectro_atual is None:
-            return False, "Gere o gráfico do espectro antes de tentar salvar!"
+            return False, "Abra um arquivo de espectro antes de tentar salvar!"
+        # ... o resto do código do método continua exatamente igual ...
             
         nome_limpo = nome_tinta.strip()
         if not nome_limpo:
@@ -53,12 +55,18 @@ class DatabaseVM:
         live_time = header.get("LIVE_TIME")
         data_aquisicao = header.get("START_TIME")
         
-        # Instancia o objeto do Model
+        # 🌟 NOVO: Extrai apenas o nome do ficheiro (ex: "tintapreta.mca") do caminho completo
+        nome_arquivo_mca = os.path.basename(self.caminho_mca) if self.caminho_mca else "Desconhecido"
+        
+        # 🌟 MODIFICADO: Instancia o objeto do Model com todos os novos parâmetros
         nova_tinta = Tinta(
             nome=nome_limpo, 
             channels=channels, 
             live_time=live_time, 
-            data_aquisicao=data_aquisicao
+            data_aquisicao=data_aquisicao,
+            arquivo_origem=nome_arquivo_mca,
+            canal_corte=canal_corte,
+            threshold_utilizado=threshold_pct
         )
         
         # Executa a ação através do Model
@@ -75,10 +83,25 @@ class DatabaseVM:
         e retorna True se o processo foi concluído com sucesso.
         """
         try:
-            # Chama a função que deve existir no seu models/databaseModel.py
-            # Esta função deve executar: DELETE FROM tintas WHERE nome = ?
             sucesso = deletar_tinta_do_banco(nome_tinta)
             return sucesso
         except Exception as e:
             print(f"Erro na ViewModel ao tentar deletar: {e}")
             return False
+
+    def filtrar_tintas_por_nome(self, texto_busca: str):
+        """Retorna apenas as tintas que contêm o termo buscado no nome."""
+        # 1. Pega a lista completa direto do banco
+        todas_tintas = self.buscar_todas_tintas()
+        
+        texto_limpo = texto_busca.strip().lower()
+        if not texto_limpo:
+            return todas_tintas
+            
+        # 2. Filtra em memória as que dão "match" com o nome digitado
+        tintas_filtradas = [
+            tinta for tinta in todas_tintas 
+            if texto_limpo in tinta.get("nome", "").lower()
+        ]
+        
+        return tintas_filtradas
